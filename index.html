@@ -3495,6 +3495,9 @@
     if(!res.ok) throw new Error(`Couldn't fetch ${path} from GitHub (${res.status}): ${await githubErrorText(res)}`);
     return res.arrayBuffer();
   }
+  // keeps this case study's media in its own R2 prefix, separate from other dashboards
+  // sharing the same bucket/worker
+  const CLOUDFLARE_FOLDER_PREFIX = "case_study-2/";
   async function uploadToCloudflare(workerUrl, secret, path, body, mime){
     const url = `${workerUrl.replace(/\/$/, "")}/${path.split("/").map(encodeURIComponent).join("/")}`;
     const res = await fetch(url, {
@@ -3640,7 +3643,7 @@
               const hash = await shortHashOfBase64(parts.base64);
               const filename = `push-${hash}.${ext}`;
               if(mediaHost === "cloudflare"){
-                m.src = await uploadToCloudflare(cfWorkerUrl, cfSecret, filename, base64ToBytes(parts.base64), parts.mime);
+                m.src = await uploadToCloudflare(cfWorkerUrl, cfSecret, CLOUDFLARE_FOLDER_PREFIX + filename, base64ToBytes(parts.base64), parts.mime);
               } else {
                 const assetPath = `assets/${filename}`;
                 const existing = await githubGetFile(owner, repo, assetPath, branch, token);
@@ -3654,7 +3657,7 @@
               const match = m.src.match(GITHUB_ASSET_PATH_RE);
               const filename = match[1], ext = match[3];
               const bytes = await githubGetRawBytes(owner, repo, m.src, branch, token);
-              m.src = await uploadToCloudflare(cfWorkerUrl, cfSecret, filename, bytes, EXT_MIME[ext]);
+              m.src = await uploadToCloudflare(cfWorkerUrl, cfSecret, CLOUDFLARE_FOLDER_PREFIX + filename, bytes, EXT_MIME[ext]);
             }
           })(), 90000, `media ${i+1}`);
           successCount++;
