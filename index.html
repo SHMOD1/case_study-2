@@ -523,7 +523,7 @@
   .sequence-steps{position:absolute;inset:0;}
   .sequence-step{
     position:absolute;inset:0;opacity:0;pointer-events:none;background:#005ba6;
-    transition:opacity .45s ease;
+    transition:opacity .35s ease;
   }
   .sequence-step.active{opacity:1;pointer-events:auto;z-index:1;}
   /* the image/GIF/video sits centered, at its own natural shape (never cropped or stretched),
@@ -3371,6 +3371,10 @@
     getStepEls(slide).forEach((el, i) => el.classList.toggle(activeClass, i === 0));
     slide.querySelectorAll(".sequence-dot").forEach((dot, i) => dot.classList.toggle("active", i === 0));
   }
+  // sequential fade instead of a simultaneous crossfade: the outgoing image fades all the way
+  // out to the plain blue field first, THEN the incoming one fades in from it -- two different
+  // photos are never visible at once (no double-exposure "ghosting"), while still reading as
+  // one smooth dissolve rather than a hard cut, since each leg is itself a gradual fade
   function advanceStep(slide, dir){
     const activeClass = stepActiveClass(slide);
     const steps = getStepEls(slide);
@@ -3381,7 +3385,7 @@
     if(nextIdx < 0) return false; // already at the first step — let normal scroll go to the previous slide
     if(nextIdx >= steps.length){ releaseGate(); return false; } // reached the end — let normal scroll continue forward
     steps[activeIdx].classList.remove(activeClass);
-    steps[nextIdx].classList.add(activeClass);
+    setTimeout(() => { steps[nextIdx].classList.add(activeClass); }, SEQUENCE_STEP_FADE_MS);
     slide.querySelectorAll(".sequence-dot").forEach((dot, i) => dot.classList.toggle("active", i === nextIdx));
     return true;
   }
@@ -3390,10 +3394,12 @@
   let sequenceWheelAccum = 0;
   let sequenceWheelLast = 0;
   const SEQUENCE_STEP_THRESHOLD = 80;
-  // just past the .45s cross-dissolve (see .sequence-step's opacity transition) so a step
-  // never gets interrupted mid-fade, while staying short enough that scrolling still feels
-  // responsive rather than freezing between steps
-  const SEQUENCE_STEP_COOLDOWN_MS = 700;
+  // each leg of the sequential fade-out-then-fade-in (see advanceStep) -- must match the
+  // .sequence-step opacity transition duration in CSS
+  const SEQUENCE_STEP_FADE_MS = 350;
+  // covers both legs (fade out + fade in) plus a small buffer, so a step never gets
+  // interrupted mid-fade, while staying short enough that scrolling still feels responsive
+  const SEQUENCE_STEP_COOLDOWN_MS = SEQUENCE_STEP_FADE_MS * 2 + 100;
   function handleSequenceWheel(e){
     if(!gateSlideEl || gateReady) return false;
     if(!getStepEls(gateSlideEl).length) return false;
