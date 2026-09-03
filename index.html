@@ -688,14 +688,14 @@
   .annotation-layer--labeled .annotation-dot::after{
     content:"";position:absolute;top:50%;left:50%;width:14px;height:14px;pointer-events:none;
     transform:translate(-50%,-50%);border-radius:50%;
-    animation:annotationDotPulse 2.4s ease-out infinite;
+    animation:annotationDotPulse 1.8s ease-out infinite;
   }
   .annotation-layer--labeled .annotation-dot:hover::before{
     box-shadow:0 0 0 5px rgba(255,255,255,1), 0 2px 10px rgba(0,0,0,.45);
   }
   @keyframes annotationDotPulse{
-    0%{box-shadow:0 0 0 0 rgba(var(--dot-rgb),.55);}
-    70%{box-shadow:0 0 0 20px rgba(var(--dot-rgb),0);}
+    0%{box-shadow:0 0 0 0 rgba(var(--dot-rgb),.8);}
+    60%{box-shadow:0 0 0 30px rgba(var(--dot-rgb),0);}
     100%{box-shadow:0 0 0 0 rgba(var(--dot-rgb),0);}
   }
   .annotation-layer--labeled .annotation-text{
@@ -704,6 +704,13 @@
     background:#005ba6;color:#fff !important;border:none;border-radius:7px;
     padding:11px 15px;box-shadow:0 14px 30px rgba(0,0,0,.3);
   }
+  /* optional photo/GIF at the top of a point's popup card, above its caption text -- sized
+     to match the card's own max-width so the card doesn't grow wider just to fit an image */
+  .annotation-layer--labeled .annotation-image{
+    position:relative;width:min(220px, 70vw);aspect-ratio:4/3;border-radius:6px;
+    overflow:hidden;margin-bottom:9px;background:rgba(255,255,255,.15);
+  }
+  body.edit-on .annotation-layer--labeled .annotation-image .media-overlay{font-size:10px;}
   .annotation-layer--labeled .annotation-text.chip-stat{
     background:#7af9b4;color:#00432c !important;
   }
@@ -723,7 +730,7 @@
   body.edit-on .annotation-layer--labeled .annotation-text.chip-stat::after{
     border-top-color:#7af9b4;
   }
-  body.edit-on .annotation-text{outline:1px dashed rgba(0,0,0,.45);outline-offset:2px;cursor:text;}
+  body.edit-on .annotation-text-body{outline:1px dashed rgba(0,0,0,.45);outline-offset:2px;cursor:text;}
   .annotation-drag-handle{
     display:none;flex:0 0 auto;cursor:grab;color:#fff;font-size:13px;letter-spacing:-2px;
     background:rgba(0,91,166,.9);border-radius:4px;padding:3px 4px;touch-action:none;user-select:none;
@@ -2242,8 +2249,11 @@
   // text box behind them is actually empty, rather than showing a colored box with nothing
   // in it — but only on the published view; Edit Mode keeps the box visible so there's still
   // something to click on to type into it
+  // .annotation-text is deliberately left out of this generic list -- its "empty" state
+  // depends on whether it has an image as well as text (see renderAnnotation and the
+  // annotationText/annotationImage handlers below), not on textContent alone
   const EMPTY_HIGHLIGHT_SELECTOR = ".chapter-title, .entry-title, .block--heading, " +
-    ".block--subheading, .block--body, .block--quote, .block--caption, .annotation-text, .intro-quote";
+    ".block--subheading, .block--body, .block--quote, .block--caption, .intro-quote";
   function refreshEmptyHighlights(){
     document.querySelectorAll(EMPTY_HIGHLIGHT_SELECTOR).forEach(el => {
       el.classList.toggle("text-empty", el.textContent.trim() === "");
@@ -2331,7 +2341,7 @@
     const owner = sectionOwner(scope, chapterId, entryId, blockId);
     if(!owner) return;
     if(!owner.annotations) owner.annotations = [];
-    owner.annotations.push({ id:newId(), x:50, y:50, text:"New label", font:FONT_OPTIONS[1].value, size:"M", bold:false, italic:false, color:"#005ba6" });
+    owner.annotations.push({ id:newId(), x:50, y:50, text:"New label", image:null, font:FONT_OPTIONS[1].value, size:"M", bold:false, italic:false, color:"#005ba6" });
     saveState(); render();
   }
   function deleteAnnotation(scope, chapterId, entryId, blockId, annotationId){
@@ -2351,6 +2361,8 @@
     const optFonts = FONT_OPTIONS.map(f => `<option value="${escapeHtml(f.value)}" ${f.value===a.font?"selected":""}>${f.label}</option>`).join("");
     const optSizes = ["S","M","L"].map(s => `<option value="${s}" ${s===a.size?"selected":""}>${s}</option>`).join("");
     const chipClass = a.chip === "stat" ? " chip-stat" : "";
+    const hasImg = !!(a.image && a.image.src);
+    const textEmpty = !(a.text && a.text.trim()) && !hasImg;
     return `
       <div class="annotation" data-annotation-id="${a.id}" ${idAttrs} style="left:${a.x}%;top:${a.y}%;">
         <div class="annotation-dot" title="Show label"></div>
@@ -2367,7 +2379,12 @@
           <input type="color" title="Text color" data-act="annoColor" data-annotation-id="${a.id}" ${idAttrs} value="${a.color || "#005ba6"}">
           <button type="button" class="danger" data-act="deleteAnnotation" data-annotation-id="${a.id}" ${idAttrs}>✕</button>
         </div>
-        <div class="annotation-text${chipClass}" style="${textStyle}" data-editable data-bind-type="annotationText" data-annotation-id="${a.id}" ${idAttrs} contenteditable="false">${escapeHtml(a.text || "")}</div>
+        <div class="annotation-text${chipClass}${textEmpty ? " text-empty" : ""}" style="${textStyle}" data-annotation-id="${a.id}" ${idAttrs}>
+          <div class="annotation-image${hasImg ? "" : " edit-only"}">
+            <div class="media-fill" data-media-scope="annotationImage" data-annotation-id="${a.id}" ${idAttrs}>${mediaMarkup(a.image)}</div>
+          </div>
+          <div class="annotation-text-body" data-editable data-bind-type="annotationText" data-annotation-id="${a.id}" ${idAttrs} contenteditable="false">${escapeHtml(a.text || "")}</div>
+        </div>
       </div>`;
   }
   function applyAnnotationStyle(a){
@@ -2934,6 +2951,8 @@
     } else if(bt === "annotationText"){
       const a = getAnnotation(el.dataset.aScope, el.dataset.chapterId, el.dataset.entryId, el.dataset.blockId, el.dataset.annotationId);
       if(a) a.text = el.textContent;
+      const card = el.closest(".annotation-text");
+      if(card) card.classList.toggle("text-empty", el.textContent.trim() === "" && !(a && a.image && a.image.src));
     } else if(bt === "sequenceStepText"){
       const s = getSequenceStep(el.dataset.chapterId, el.dataset.entryId, el.dataset.stepId);
       if(s) s.text = el.textContent;
@@ -3041,7 +3060,9 @@
         entryId: scopeEl.dataset.entryId,
         blockId: scopeEl.dataset.blockId,
         logoId: scopeEl.dataset.logoId,
-        stepId: scopeEl.dataset.stepId
+        stepId: scopeEl.dataset.stepId,
+        annotationId: scopeEl.dataset.annotationId,
+        aScope: scopeEl.dataset.aScope
       });
       return;
     }
@@ -3907,6 +3928,15 @@
       const step = getSequenceStep(target.chapterId, target.entryId, target.stepId);
       if(step) step.media = media;
       container = document.querySelector(`.media-fill[data-media-scope="sequenceStep"][data-step-id="${cssEscape(target.stepId)}"]`);
+    } else if(target.scope === "annotationImage"){
+      const a = getAnnotation(target.aScope, target.chapterId, target.entryId, target.blockId, target.annotationId);
+      if(a) a.image = media;
+      container = document.querySelector(`.media-fill[data-media-scope="annotationImage"][data-annotation-id="${cssEscape(target.annotationId)}"]`);
+      const wrap = container && container.closest(".annotation-image");
+      const card = container && container.closest(".annotation-text");
+      const hasImg = !!(media && media.src);
+      if(wrap) wrap.classList.toggle("edit-only", !hasImg);
+      if(card) card.classList.toggle("text-empty", !hasImg && !(a && a.text && a.text.trim()));
     } else if(target.scope && target.scope.endsWith("CalloutMedia")){
       const scope = target.scope.slice(0, -"CalloutMedia".length);
       const owner = sectionOwner(scope, target.chapterId, target.entryId);
