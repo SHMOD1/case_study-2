@@ -3742,12 +3742,53 @@
         requestAnimationFrame(smoothStep);
       } else {
         smoothRunning = false;
+        slideJumping = false;
       }
+    }
+
+    /* one-scroll slide transitions: a single wheel gesture (one mouse click, or one trackpad
+       flick) carries the reader fully from the current full-screen slide (hero / chapter cover
+       / entry) to the next one, instead of requiring several ticks of plain scroll to cross
+       that slide's own height. Reuses the same smoothTarget/smoothStep glide as ordinary
+       scrolling above (rather than a second, competing animation loop) -- it just sets the
+       target to the whole next slide in one go instead of nudging it by each wheel tick's
+       delta, so the existing easing already does the "beautiful" part. Only engages between
+       slides that are actually adjacent on screen -- scrolling up before the hero, or down past
+       the last entry into the footer, falls straight through to the ordinary incremental scroll
+       below, and a Scroll Sequence page (handled earlier, above) or an active section-hold gate
+       is left alone entirely. While a slide-jump glide is still resolving, further wheel input
+       is absorbed rather than retargeted, so one continuous gesture advances exactly one slide. */
+    function getSlideEls(){ return Array.from(document.querySelectorAll(".hero, .chapter-cover, .entry")); }
+    function activeSlideIndex(slides){
+      const viewportMid = window.innerHeight * 0.42; // matches getActiveSlideEl's own convention
+      let idx = 0;
+      slides.forEach((el, i) => { if(el.getBoundingClientRect().top - viewportMid <= 0) idx = i; });
+      return idx;
+    }
+    let slideWheelAccum = 0;
+    let slideJumping = false;
+    const SLIDE_WHEEL_THRESHOLD = 40; // well under one standard mouse-wheel click's delta, so a single click reliably triggers a transition
+    function handleSlideWheel(e){
+      if(slideJumping) return smoothRunning; // absorb input only while our own jump is still gliding
+      if(!gateReady) return false; // this slide's media hold is still active -- let the ordinary clamp-to-ceiling scroll below handle it
+      const slides = getSlideEls();
+      const idx = activeSlideIndex(slides);
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const nextIdx = idx + dir;
+      if(nextIdx < 0 || nextIdx >= slides.length) return false; // nothing above the hero, or past the last entry into the footer -- plain scroll
+      slideWheelAccum += Math.abs(normalizedDelta(e));
+      if(slideWheelAccum < SLIDE_WHEEL_THRESHOLD) return true;
+      slideWheelAccum = 0;
+      smoothTarget = Math.min(slides[nextIdx].offsetTop, scrollCeiling);
+      slideJumping = true;
+      if(!smoothRunning){ smoothRunning = true; requestAnimationFrame(smoothStep); }
+      return true;
     }
     window.addEventListener("wheel", (e) => {
       if(backdrop.classList.contains("open")) return;
       e.preventDefault();
       if(handleSequenceWheel(e)) return; // consumed by a scroll-sequence page, not a scroll
+      if(handleSlideWheel(e)) return; // consumed by a full-slide transition
       smoothTarget = Math.min(Math.max(smoothTarget + normalizedDelta(e), 0), Math.min(maxScroll(), scrollCeiling));
       if(!smoothRunning){ smoothRunning = true; requestAnimationFrame(smoothStep); }
     }, { passive:false });
