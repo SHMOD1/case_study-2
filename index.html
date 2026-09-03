@@ -520,9 +520,13 @@
      clear, centered focal point; each step carries its own optional caption text. The image
      always sits in the exact same spot at the exact same size (see .sequence-step-media) --
      only the picture (and caption) inside that one fixed frame ever changes. */
-  .sequence-steps{position:absolute;inset:0;}
+  /* the solid blue field lives on this always-opaque wrapper, never on the steps themselves —
+     a step's own opacity only ever fades its photo in/out; if the background faded with it,
+     the thinning blue mask would briefly expose whatever slide sits underneath in the sticky
+     stack instead of just revealing more blue */
+  .sequence-steps{position:absolute;inset:0;background:#005ba6;}
   .sequence-step{
-    position:absolute;inset:0;opacity:0;pointer-events:none;background:#005ba6;
+    position:absolute;inset:0;opacity:0;pointer-events:none;
     transition:opacity .35s ease;
   }
   .sequence-step.active{opacity:1;pointer-events:auto;z-index:1;}
