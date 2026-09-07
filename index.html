@@ -2917,6 +2917,18 @@
   $("btnEdit").addEventListener("click", () => setEditMode(!editOn));
   touchDeviceQuery.addEventListener("change", (e) => { if(e.matches && editOn) setEditMode(false); });
 
+  // pasting into any editable field (a label, a caption, a title...) always inserts plain text,
+  // never whatever rich formatting the clipboard carried -- otherwise a pasted citation/link's
+  // own inline color (often blue, from wherever it was copied) shows up literally in the text,
+  // overriding the field's own color no matter what's set for it
+  document.addEventListener("paste", (e) => {
+    const el = e.target.closest("[data-editable]");
+    if(!el) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, text);
+  });
+
   /* ---------------- delegated input (typing) ---------------- */
   document.addEventListener("input", (e) => {
     const el = e.target;
