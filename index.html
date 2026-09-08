@@ -2907,10 +2907,15 @@
   }
   function renderSequenceStep(chapter, entry, step, i, total){
     const idAttrs = `data-chapter-id="${chapter.id}" data-entry-id="${entry.id}" data-step-id="${step.id}"`;
+    // same point-marker labels as a Full Background photo (dot + optional image/text popup) --
+    // scoped inside .sequence-step-media itself, not the whole step, so a %x/%y position maps
+    // onto the actual visible photo frame rather than the cream margin around it
+    const annLayerClass = (step.annotations || []).length ? " annotation-layer--labeled" : "";
     return `
       <div class="sequence-step${i === 0 ? " active" : ""}" data-step-id="${step.id}" data-index="${i}">
         <div class="sequence-step-media">
           <div class="media-fill" data-media-scope="sequenceStep" ${idAttrs}>${mediaMarkup(step.media, true)}</div>
+          <div class="annotation-layer${annLayerClass}">${renderAnnotationItems("sequenceStep", chapter.id, entry.id, step.id, step.annotations)}</div>
         </div>
         <div class="sequence-step-index">${i + 1} / ${total}</div>
         <div class="sequence-step-toolbar">
