@@ -105,6 +105,16 @@
   .chapter-cover > .media-fill .media-el{
     transition: transform 9s cubic-bezier(.16,.68,.32,1);
   }
+  /* a small, cursor-driven parallax on the hero photo -- scaled up just enough (see
+     heroParallax()) to give room for the pan without ever exposing an edge, eased with a
+     plain transition rather than a per-frame loop since it only needs to follow, not animate
+     continuously. Chapter Cover and Full Background already have their own motion (the
+     Ken-Burns zoom above, and the point-click zoom respectively), so this is Hero-only for now
+     to avoid two different effects fighting over the same transform. */
+  #heroMediaWrap .media-el{
+    transform: scale(1.08);
+    transition: transform .5s cubic-bezier(.16,.68,.32,1);
+  }
   .chapter-cover.zoom-active > .media-fill .media-el{
     transform: scale(1.17) translate(-2.2%, -3.2%);
   }
@@ -4217,6 +4227,24 @@
     if(reduceMotion || isMobileLayout()) return;
     document.querySelectorAll('.chapter-cover, .entry[data-page-type="background"]').forEach(slide => {
       slide.classList.toggle("zoom-active", slide === gateSlideEl);
+    });
+  }
+
+  // hero-only cursor parallax -- listener stays on the static .hero section (never replaced),
+  // and looks up the current .media-el fresh on every move rather than caching it, since
+  // heroWrap's own innerHTML gets fully replaced on every render()
+  if(!reduceMotion){
+    document.getElementById("hero")?.addEventListener("mousemove", (e) => {
+      const media = heroWrap.querySelector(".media-el");
+      if(!media) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      media.style.transform = `scale(1.08) translate(${(-px * 3).toFixed(2)}%, ${(-py * 3).toFixed(2)}%)`;
+    });
+    document.getElementById("hero")?.addEventListener("mouseleave", () => {
+      const media = heroWrap.querySelector(".media-el");
+      if(media) media.style.transform = "";
     });
   }
 
