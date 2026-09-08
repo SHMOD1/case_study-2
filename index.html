@@ -4371,6 +4371,33 @@
     window.addEventListener("resize", () => {
       smoothTarget = Math.min(smoothTarget, maxScroll());
     });
+
+    // the wheel handler above is what makes "one scroll = one slide" work, but it only ever
+    // sees wheel events -- dragging the scrollbar thumb, clicking its track, or paging with the
+    // keyboard all scroll the page natively without firing a single "wheel" event, so none of
+    // that goes through it. Left alone, that can strand the reader mid-transition between two
+    // sticky slides, where the next one is only partway risen over the current one -- for most
+    // slide types that just looks like an ordinary in-between moment, but for a Scroll Sequence
+    // (with its own cream field around the photo, not full-bleed) it reads as a visible seam
+    // from the next slide showing through. Once scrolling from ANY source settles somewhere
+    // that isn't a slide boundary, ease the rest of the way to whichever slide is closest.
+    let scrollSettleTimer = null;
+    function correctScrollToNearestSlide(){
+      if(editOn || slideJumping || smoothRunning) return;
+      const slides = getSlideEls();
+      if(!slides.length) return;
+      const idx = activeSlideIndex(slides);
+      const top = slides[idx].getBoundingClientRect().top;
+      if(Math.abs(top) < 2) return; // already settled close enough
+      smoothTarget = Math.min(Math.max(window.scrollY + top, 0), scrollCeiling);
+      smoothRunning = true;
+      requestAnimationFrame(smoothStep);
+    }
+    window.addEventListener("scroll", () => {
+      if(smoothRunning || slideJumping) return; // already our own glide settling itself -- don't fight it
+      clearTimeout(scrollSettleTimer);
+      scrollSettleTimer = setTimeout(correctScrollToNearestSlide, 160);
+    }, { passive:true });
   }
 
   /* ---------------- drag-to-reposition for text-box annotations (Edit Mode only, via a
