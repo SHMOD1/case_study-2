@@ -108,6 +108,12 @@
   .chapter-cover.zoom-active > .media-fill .media-el{
     transform: scale(1.17) translate(-2.2%, -3.2%);
   }
+  /* clicking a Full Background point (see setPointZoom) nudges the photo in toward that exact
+     spot -- transform-origin is set inline per click since it depends on which point was
+     opened, so only the transition itself needs to live here */
+  .entry[data-page-type="background"] > .media-fill .media-el{
+    transition: transform 1.1s cubic-bezier(.16,.68,.32,1);
+  }
   .video-frame{position:relative;width:100%;height:100%;}
   .video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
   .media-badge{
@@ -3319,6 +3325,21 @@
     el.style.textAlign = block.align;
   }
 
+  // nudges the Full Background photo in slightly toward whichever point is open, centered on
+  // that exact spot -- purely cosmetic, so it's skipped entirely for reduced-motion visitors
+  // (a plain CSS transition would still run for them otherwise, since it isn't scroll-driven)
+  function setPointZoom(layer, ann, zoomedIn){
+    if(reduceMotion) return;
+    const entry = layer.closest(".entry");
+    const media = entry && entry.querySelector('.media-fill[data-media-scope="entryMedia"] .media-el');
+    if(!media) return;
+    if(zoomedIn){
+      media.style.transformOrigin = `${ann.style.left} ${ann.style.top}`;
+      media.style.transform = "scale(1.35)";
+    } else {
+      media.style.transform = "";
+    }
+  }
   /* ---------------- Full Background point markers: click a dot to open its popup, click
      another to switch to it, click anywhere outside a marker to close whatever's open. Edit
      Mode never runs this -- every popup already stays open there (see the CSS) so there's
@@ -3333,12 +3354,16 @@
         const wasOpen = ann.classList.contains("annotation-open");
         layer.querySelectorAll(".annotation.annotation-open").forEach(a => a.classList.remove("annotation-open"));
         if(!wasOpen) ann.classList.add("annotation-open");
+        setPointZoom(layer, ann, !wasOpen);
       }
       return;
     }
     if(!e.target.closest(".annotation")){
       document.querySelectorAll(".annotation-layer--labeled .annotation.annotation-open")
-        .forEach(a => a.classList.remove("annotation-open"));
+        .forEach(a => {
+          a.classList.remove("annotation-open");
+          setPointZoom(a.closest(".annotation-layer--labeled"), a, false);
+        });
     }
   });
 
