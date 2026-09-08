@@ -4048,7 +4048,15 @@
       slideWheelAccum += Math.abs(normalizedDelta(e));
       if(slideWheelAccum < SLIDE_WHEEL_THRESHOLD) return true;
       slideWheelAccum = 0;
-      smoothTarget = Math.min(slides[nextIdx].offsetTop, scrollCeiling);
+      // a sticky slide's own offsetTop can't be trusted once it's been scrolled past -- browsers
+      // report a frozen or live "currently stuck" position through that property instead of its
+      // true static-flow offset (confirmed: it drifts to track whatever scrollY happens to be,
+      // which is exactly why a backward jump kept computing the SAME position we were already
+      // at). Height, unlike top-position, is never affected by that -- so move by exactly one
+      // slide's own height relative to the current (exact, just-snapped-to) scroll position
+      // instead of looking up an absolute target.
+      const height = (dir > 0 ? slides[idx] : slides[nextIdx]).getBoundingClientRect().height;
+      smoothTarget = Math.min(Math.max(window.scrollY + dir * height, 0), scrollCeiling);
       slideJumping = true;
       if(!smoothRunning){ smoothRunning = true; requestAnimationFrame(smoothStep); }
       return true;
