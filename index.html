@@ -796,7 +796,15 @@
   .block-toolbar button.danger:hover{border-color:#e37a7a;color:#ffbcbc;}
   .block-toolbar .spacer{flex:1;}
 
-  .block{max-width:66ch;color:#e6e7f5;}
+  /* every text block fades and drifts up into place the first time it scrolls into view (see
+     revealTextBlocks()), instead of just sitting there fully rendered -- Edit Mode always shows
+     it in full so an author never loses sight of what they're editing, and the global
+     prefers-reduced-motion rule at the top of this stylesheet already collapses the transition
+     to near-instant for anyone who wants that, without ever leaving content stuck invisible */
+  .block{max-width:66ch;color:#e6e7f5;opacity:0;transform:translateY(18px);
+    transition:opacity .6s ease, transform .6s ease;}
+  .block.block-revealed{opacity:1;transform:translateY(0);}
+  body.edit-on .block{opacity:1;transform:none;}
   .block p{margin:0 0 12px;}
   .block p:last-child{margin-bottom:0;}
   /* Every block's color and typeface are fixed per type here rather than left to a per-block
@@ -3565,6 +3573,18 @@
     blockMediaMotion();
     fullBleedMotion();
     animateStatCounters();
+    revealTextBlocks();
+  }
+
+  // fades + drifts every text block up into place the first time it scrolls into view (see the
+  // .block CSS above) -- purely a one-time entrance per block, not scroll-linked afterward
+  function revealTextBlocks(){
+    if(editOn) return;
+    document.querySelectorAll(".block:not(.block-revealed)").forEach(el => {
+      const r = el.getBoundingClientRect();
+      if(r.top > window.innerHeight * 0.92 || r.bottom < 0) return;
+      el.classList.add("block-revealed");
+    });
   }
 
   function updateProgressBar(){
