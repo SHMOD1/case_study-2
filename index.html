@@ -824,6 +824,12 @@
   .block--quote::before{content:"\201C";position:absolute;left:12px;top:8px;font-family:Georgia,"Times New Roman",serif;
     font-style:normal;font-weight:800;font-size:2.2em;line-height:1;color:#005ba6;}
   .block--caption{letter-spacing:.02em;font-style:italic;padding:10px 16px;}
+  /* a standalone number/figure that counts up from 0 the moment it scrolls into view (see
+     animateStatCounters()) -- only the leading number in the text is what animates; anything
+     around it (a unit, a year range, etc.) shows as typed the whole time */
+  .block--stat{font-family:var(--font-main);font-weight:800;letter-spacing:-.01em;line-height:1;text-shadow:none;
+    display:inline-block;background:#7af9b4;color:#00432c;padding:.2em .5em;border-radius:10px;
+    font-variant-numeric:tabular-nums;}
   /* on the published page, a text box with nothing typed into it shows no highlight at all —
      no colored box with nothing in it — but Edit Mode keeps the box visible so there's still
      something there to click on and type into */
@@ -831,7 +837,7 @@
   body:not(.edit-on) .block--heading.text-empty, body:not(.edit-on) .block--subheading.text-empty,
   body:not(.edit-on) .block--body.text-empty, body:not(.edit-on) .block--quote.text-empty,
   body:not(.edit-on) .block--caption.text-empty, body:not(.edit-on) .annotation-text.text-empty,
-  body:not(.edit-on) .sequence-step-text.text-empty{
+  body:not(.edit-on) .sequence-step-text.text-empty, body:not(.edit-on) .block--stat.text-empty{
     background:none;box-shadow:none;padding:0;border:none;min-width:0;min-height:0;
   }
   body:not(.edit-on) .block--quote.text-empty::before{display:none;}
@@ -1351,14 +1357,16 @@
     subheading:{ S:15, M:18, L:21, XL:24 },
     body:      { S:14, M:16, L:18, XL:20 },
     quote:     { S:14, M:16.5, L:19, XL:22 },
-    caption:   { S:11, M:12.5, L:14, XL:15 }
+    caption:   { S:11, M:12.5, L:14, XL:15 },
+    stat:      { S:34, M:48, L:64, XL:84 }
   };
   const BLOCK_TYPES = [
     { type:"heading", label:"Heading", font:FONT_OPTIONS[0].value, size:"M", text:"New Heading" },
     { type:"subheading", label:"Subheading", font:FONT_OPTIONS[0].value, size:"M", text:"A short supporting line" },
     { type:"body", label:"Body text", font:FONT_OPTIONS[1].value, size:"M", text:"<p>Write your paragraph text here. Use the toolbar above to change its style, font, size, or alignment.</p>" },
     { type:"quote", label:"Pull quote", font:FONT_OPTIONS[0].value, size:"M", text:"“Insert a memorable quote or pull-out line here.”" },
-    { type:"caption", label:"Caption", font:FONT_OPTIONS[1].value, size:"M", text:"Caption or source line" }
+    { type:"caption", label:"Caption", font:FONT_OPTIONS[1].value, size:"M", text:"Caption or source line" },
+    { type:"stat", label:"Stat Counter", font:FONT_OPTIONS[0].value, size:"M", text:"1,234" }
   ];
   // brand secondary palette (navy substituted with primary blue/cyan variants for on-photo legibility;
   // exact navy 134370 is used for the app chrome bar instead, where a dark tone is wanted)
@@ -2625,7 +2633,7 @@
   // depends on whether it has an image as well as text (see renderAnnotation and the
   // annotationText/annotationImage handlers below), not on textContent alone
   const EMPTY_HIGHLIGHT_SELECTOR = ".chapter-title, .entry-title, .block--heading, " +
-    ".block--subheading, .block--body, .block--quote, .block--caption, .intro-quote, .sequence-step-text";
+    ".block--subheading, .block--body, .block--quote, .block--caption, .intro-quote, .sequence-step-text, .block--stat";
   function refreshEmptyHighlights(){
     document.querySelectorAll(EMPTY_HIGHLIGHT_SELECTOR).forEach(el => {
       el.classList.toggle("text-empty", el.textContent.trim() === "");
@@ -3556,6 +3564,7 @@
     slideMotion();
     blockMediaMotion();
     fullBleedMotion();
+    animateStatCounters();
   }
 
   function updateProgressBar(){
@@ -3902,6 +3911,52 @@
       const pan = (progress - 0.5) * 34;
       const scale = 1.04 + progress * 0.06;
       media.style.transform = `scale(${scale.toFixed(3)}) translateY(${pan.toFixed(1)}px)`;
+    });
+  }
+
+  // a Stat Counter block counts up from 0 to its own number the moment it first scrolls into
+  // view, then leaves the exact authored text in place (including any bold/italic formatting,
+  // restored via innerHTML at the end) -- only the leading number in the block's text drives
+  // the animation, so "857 km" or "1962-2061" both work with whatever surrounds the digits
+  // left untouched. Skipped in Edit Mode (nothing to animate while someone might be mid-type)
+  // and for reduced-motion visitors, who just see the final text immediately.
+  function animateStatCounters(){
+    if(editOn) return;
+    document.querySelectorAll(".block--stat:not(.stat-counted)").forEach(el => {
+      const r = el.getBoundingClientRect();
+      if(r.top > window.innerHeight * 0.85 || r.bottom < 0) return;
+      el.classList.add("stat-counted");
+      if(reduceMotion) return;
+      const originalHTML = el.innerHTML;
+      const original = el.textContent;
+      const match = original.match(/[\d,]+\.?\d*/);
+      if(!match) return;
+      const numStr = match[0];
+      const target = parseFloat(numStr.replace(/,/g, ""));
+      if(!isFinite(target)) return;
+      const decimals = numStr.includes(".") ? numStr.split(".")[1].length : 0;
+      const hasCommas = numStr.includes(",");
+      const prefix = original.slice(0, match.index);
+      const suffix = original.slice(match.index + numStr.length);
+      const duration = 1300;
+      const startTime = performance.now();
+      function formatNum(n){
+        let s = decimals ? n.toFixed(decimals) : String(Math.round(n));
+        if(hasCommas){
+          const parts = s.split(".");
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          s = parts.join(".");
+        }
+        return s;
+      }
+      function tick(now){
+        const t = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = prefix + formatNum(target * eased) + suffix;
+        if(t < 1) requestAnimationFrame(tick);
+        else el.innerHTML = originalHTML;
+      }
+      requestAnimationFrame(tick);
     });
   }
 
