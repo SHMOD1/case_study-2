@@ -165,6 +165,16 @@
      "gauge" on the right standing in for the usual centered scroll-down button. Scoped to
      .hero only; chapter covers and entries keep their own bottom-left full-bleed treatment. */
   .hero{align-items:stretch;background:#005ba6;}
+  /* a soft gradient scrim behind the text on every full-bleed slide (Hero, Chapter Cover,
+     Full Background), instead of a solid color box around the text itself -- z-index:1 sits
+     it between the plain (z-index:auto) photo and the content wrapper (z-index:2, set where
+     .hero-content/.chapter-cover-content/.entry-content are declared), so it works without
+     adding any markup. Kept dark regardless of a slide's own accent color since it's reading
+     against a photo, not a flat background. */
+  .hero::before, .chapter-cover::before, .entry[data-page-type="background"]::before{
+    content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(to top, rgba(8,10,18,.85) 0%, rgba(8,10,18,.45) 42%, rgba(8,10,18,0) 72%);
+  }
   .hero .hero-content{
     display:flex;align-items:stretch;justify-content:space-between;text-align:left;
     padding:6vh 6% 7vh;gap:4vw;color:#fff;height:100%;
@@ -340,12 +350,10 @@
   .chapter-index{font-family:var(--font-body);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#fbe847;margin-bottom:14px;font-weight:700;
     text-shadow:0 2px 8px rgba(0,0,0,.7);padding-left:28px;position:relative;}
   .chapter-index::before{content:"";position:absolute;left:0;top:50%;width:20px;height:1px;background:#fbe847;}
-  .chapter-title{font-family:var(--font-main);font-size:clamp(26px,3.4vw,46px);font-weight:800;letter-spacing:-.015em;margin:0;line-height:1.55;
-    text-shadow:none;
-    display:inline;background:#005ba6;color:#fff;padding:.1em .45em;border-radius:4px;
-    box-decoration-break:clone;-webkit-box-decoration-break:clone;}
-  .chapter-subtitle{font-family:var(--font-body);font-size:15.5px;font-weight:700;color:#00432c;max-width:560px;line-height:1.65;text-shadow:none;
-    margin-top:18px;background:#7af9b4;padding:14px 18px;border-radius:10px;}
+  .chapter-title{font-family:var(--font-main);font-size:clamp(30px,4.2vw,58px);font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.05;
+    color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.5);}
+  .chapter-subtitle{font-family:var(--font-body);font-size:16px;font-weight:400;color:rgba(255,255,255,.82);max-width:560px;line-height:1.65;
+    margin-top:16px;text-shadow:0 1px 12px rgba(0,0,0,.4);}
 
   .chapter-toolbar, .entry-toolbar{position:absolute;top:16px;right:16px;z-index:3;gap:8px;}
   .chapter-toolbar button, .entry-toolbar button{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
@@ -557,8 +565,7 @@
   .sequence-step-text{
     position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);z-index:2;
     width:min(820px, 84%);text-align:center;
-    font-family:var(--font-body);font-size:clamp(16px,2.1vw,20px);font-weight:700;color:#00432c;line-height:1.55;
-    background:#7af9b4;padding:14px 24px;border-radius:10px;text-shadow:none;
+    font-family:var(--font-body);font-size:clamp(17px,2.2vw,21px);font-weight:700;color:#134370;line-height:1.55;
   }
   .sequence-step-toolbar{position:absolute;top:16px;left:16px;z-index:3;display:none;gap:8px;}
   body.edit-on .sequence-step-toolbar{display:flex;}
@@ -777,10 +784,8 @@
   .entry-year-tag{font-family:var(--font-main);font-weight:700;font-size:15px;color:#fbe847;letter-spacing:.04em;transition:color .5s ease;
     text-shadow:0 2px 8px rgba(0,0,0,.7);}
   .entry-rule{flex:1;height:1px;background:rgba(240,241,250,.3);max-width:120px;}
-  .entry-title{font-family:var(--font-main);font-size:clamp(20px,2.4vw,30px);font-weight:800;letter-spacing:-.01em;margin:0;line-height:1.7;max-width:820px;
-    text-shadow:none;
-    display:inline;background:#005ba6;color:#fff;padding:.1em .45em;border-radius:4px;
-    box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+  .entry-title{font-family:var(--font-main);font-size:clamp(24px,3vw,40px);font-weight:800;letter-spacing:-.015em;margin:0;line-height:1.1;max-width:820px;
+    color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.5);}
   .entry-caption{font-family:var(--font-body);font-size:12px;color:rgba(240,241,250,.65);margin:12px 0 20px;font-style:italic;}
 
   /* ---------- text blocks: laid out horizontally, side by side, wrapping to a new row
@@ -821,39 +826,29 @@
      choice (renderBlock() no longer emits font-family/color inline at all, only font-size and
      text-align stay author-adjustable) -- one heading, one body, one quote, one caption look,
      everywhere, instead of each instance drifting to whatever font/color its author happened
-     to pick, which is how a block ended up with near-white text on this same light card. */
-  .block--heading{font-family:var(--font-main);font-weight:800;letter-spacing:-.01em;line-height:1.7;text-shadow:none;
-    display:inline;background:#005ba6;color:#fff;padding:.08em .4em;border-radius:4px;
-    box-decoration-break:clone;-webkit-box-decoration-break:clone;}
-  /* wrap long headings within a readable column so the per-line highlight
-     (box-decoration-break:clone above) actually produces multiple highlighted lines
-     instead of one long bar running off the edge of the screen */
+     to pick. Plain text sitting on the slide's own gradient scrim (see .hero::before etc.)
+     instead of a solid color box behind each block -- checkpoint-1-bold-blocks has the
+     previous flat-color-block look, if this doesn't work out. */
+  .block--heading{font-family:var(--font-main);font-weight:800;letter-spacing:-.015em;line-height:1.15;
+    color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.5);}
   .block-wrap:has(.block--heading){max-width:700px;}
-  /* every text box that isn't a heading or body — Subheading, Pull quote, Caption — shares the
-     same plain white/cream card look, so only headings carry the blue highlight treatment */
-  .block--subheading, .block--quote, .block--caption{
-    background:#ebe4da;color:#2b2b2b;padding:14px 18px;border-radius:10px;text-shadow:none;
-  }
-  /* Body text gets the same bold green treatment as a Stat Counter, just at body's own
-     (smaller) size, rather than the plain cream card the other block types use */
-  .block--body{
-    background:#7af9b4;color:#00432c;padding:14px 18px;border-radius:10px;text-shadow:none;
-    font-weight:700;
+  .block--subheading, .block--quote, .block--caption, .block--body{
+    color:rgba(255,255,255,.92);text-shadow:0 1px 12px rgba(0,0,0,.45);
   }
   .block--body, .block--caption{font-family:var(--font-body);}
   .block--subheading, .block--quote{font-family:var(--font-main);}
-  .block--body{line-height:1.6;}
-  .block--subheading{font-weight:700;line-height:1.5;letter-spacing:.01em;}
+  .block--body{line-height:1.75;}
+  .block--subheading{font-weight:700;line-height:1.5;letter-spacing:.01em;color:#fff;}
   .block--quote{font-style:italic;font-weight:600;line-height:1.6;position:relative;padding-left:42px;}
-  .block--quote::before{content:"\201C";position:absolute;left:12px;top:8px;font-family:Georgia,"Times New Roman",serif;
-    font-style:normal;font-weight:800;font-size:2.2em;line-height:1;color:#005ba6;}
-  .block--caption{letter-spacing:.02em;font-style:italic;padding:10px 16px;}
+  .block--quote::before{content:"\201C";position:absolute;left:12px;top:-6px;font-family:Georgia,"Times New Roman",serif;
+    font-style:normal;font-weight:800;font-size:2.2em;line-height:1;color:#7af9b4;text-shadow:none;}
+  .block--caption{letter-spacing:.02em;font-style:italic;color:rgba(255,255,255,.65);}
   /* a standalone number/figure that counts up from 0 the moment it scrolls into view (see
      animateStatCounters()) -- only the leading number in the text is what animates; anything
      around it (a unit, a year range, etc.) shows as typed the whole time */
-  .block--stat{font-family:var(--font-main);font-weight:800;letter-spacing:-.01em;line-height:1;text-shadow:none;
-    display:inline-block;background:#7af9b4;color:#00432c;padding:.2em .5em;border-radius:10px;
-    font-variant-numeric:tabular-nums;}
+  .block--stat{font-family:var(--font-main);font-weight:800;letter-spacing:-.015em;line-height:1;
+    display:inline-block;color:#7af9b4;text-shadow:0 2px 20px rgba(0,0,0,.55);
+    padding-top:.15em;border-top:3px solid #7af9b4;font-variant-numeric:tabular-nums;}
   /* on the published page, a text box with nothing typed into it shows no highlight at all —
      no colored box with nothing in it — but Edit Mode keeps the box visible so there's still
      something there to click on and type into */
@@ -1054,6 +1049,10 @@
       background:#ebe4da;color:#2b2b2b;text-shadow:none;
       padding:28px 6% 40px;
     }
+    /* the gradient scrim exists to darken a photo for text contrast -- there's no photo behind
+       the text here at all on mobile (see the flattened card layout above), so it would just
+       muddy the plain card background instead */
+    .hero::before, .chapter-cover::before, .entry[data-page-type="background"]::before{display:none;}
     .hero .hero-content{display:block;height:auto;}
     .hero-content-main{display:block;}
     .hero-logos-wrap{margin-bottom:20px;}
@@ -1070,10 +1069,12 @@
 
     .chapter-index{color:#005ba6;text-shadow:none;}
     .chapter-index::before{background:#005ba6;}
+    .chapter-title{color:#141413;text-shadow:none;}
+    .chapter-subtitle{color:#3d3d3d;text-shadow:none;}
 
     .entry-eyebrow{color:#005ba6;}
     .entry-rule{background:rgba(0,0,0,.18);}
-    .entry-title{text-shadow:none;}
+    .entry-title{color:#141413;text-shadow:none;}
     .entry-caption{text-shadow:none;color:#3d3d3d;}
 
     /* the freeform Full Background block column no longer needs to stay narrow to leave
