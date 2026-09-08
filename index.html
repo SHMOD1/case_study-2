@@ -514,11 +514,11 @@
      clear, centered focal point; each step carries its own optional caption text. The image
      always sits in the exact same spot at the exact same size (see .sequence-step-media) --
      only the picture (and caption) inside that one fixed frame ever changes. */
-  /* the solid blue field lives on this always-opaque wrapper, never on the steps themselves —
+  /* the solid cream field lives on this always-opaque wrapper, never on the steps themselves —
      a step's own opacity only ever fades its photo in/out; if the background faded with it,
-     the thinning blue mask would briefly expose whatever slide sits underneath in the sticky
-     stack instead of just revealing more blue */
-  .sequence-steps{position:absolute;inset:0;background:#005ba6;}
+     the thinning mask would briefly expose whatever slide sits underneath in the sticky
+     stack instead of just revealing more of the field */
+  .sequence-steps{position:absolute;inset:0;background:#ebe4da;}
   .sequence-step{
     position:absolute;inset:0;opacity:0;pointer-events:none;
     transition:opacity .35s ease;
@@ -673,10 +673,10 @@
   .annotation-layer--labeled .annotation-dot{
     display:block;position:relative;flex:0 0 auto;width:34px;height:34px;
     border-radius:50%;cursor:pointer;pointer-events:auto;
-    --dot-rgb:0,91,166;
+    --dot-rgb:122,249,180; /* bright green, matches the "Highlight" chip's own accent */
   }
   .annotation-layer--labeled .annotation:has(.annotation-text.chip-stat) .annotation-dot{
-    --dot-rgb:26,143,90;
+    --dot-rgb:255,222,23; /* bright yellow for "Stat Chip" points */
   }
   .annotation-layer--labeled .annotation-dot::before{
     content:"";position:absolute;top:50%;left:50%;width:14px;height:14px;z-index:1;
