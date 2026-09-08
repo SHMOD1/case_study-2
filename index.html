@@ -819,14 +819,20 @@
      (box-decoration-break:clone above) actually produces multiple highlighted lines
      instead of one long bar running off the edge of the screen */
   .block-wrap:has(.block--heading){max-width:700px;}
-  /* every text box that isn't a heading — Subheading, Body, Pull quote, Caption — shares the
+  /* every text box that isn't a heading or body — Subheading, Pull quote, Caption — shares the
      same plain white/cream card look, so only headings carry the blue highlight treatment */
-  .block--body, .block--subheading, .block--quote, .block--caption{
+  .block--subheading, .block--quote, .block--caption{
     background:#ebe4da;color:#2b2b2b;padding:14px 18px;border-radius:10px;text-shadow:none;
+  }
+  /* Body text gets the same bold green treatment as a Stat Counter, just at body's own
+     (smaller) size, rather than the plain cream card the other block types use */
+  .block--body{
+    background:#7af9b4;color:#00432c;padding:14px 18px;border-radius:10px;text-shadow:none;
+    font-weight:700;
   }
   .block--body, .block--caption{font-family:var(--font-body);}
   .block--subheading, .block--quote{font-family:var(--font-main);}
-  .block--body{line-height:1.75;}
+  .block--body{line-height:1.6;}
   .block--subheading{font-weight:700;line-height:1.5;letter-spacing:.01em;}
   .block--quote{font-style:italic;font-weight:600;line-height:1.6;position:relative;padding-left:42px;}
   .block--quote::before{content:"\201C";position:absolute;left:12px;top:8px;font-family:Georgia,"Times New Roman",serif;
