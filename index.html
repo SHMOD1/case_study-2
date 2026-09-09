@@ -693,6 +693,11 @@
      click at a time — the card styling itself still matches the published result exactly,
      just always expanded while editing. */
   .annotation-dot{ display:none; }
+  /* numbers each point in the order it appears in this slide's own layer (1, 2, 3...) rather
+     than an unlabeled dot -- resets per layer, so every Full Background photo (and each Scroll
+     Sequence step) starts its own points back at 1 */
+  .annotation-layer--labeled{counter-reset: pointNum;}
+  .annotation-layer--labeled .annotation{counter-increment: pointNum;}
   .annotation-layer--labeled .annotation-dot{
     display:block;position:relative;flex:0 0 auto;width:34px;height:34px;
     border-radius:50%;cursor:pointer;pointer-events:auto;
@@ -702,15 +707,17 @@
     --dot-rgb:255,222,23; /* bright yellow for "Stat Chip" points */
   }
   .annotation-layer--labeled .annotation-dot::before{
-    content:"";position:absolute;top:50%;left:50%;width:14px;height:14px;z-index:1;
+    content:counter(pointNum);display:flex;align-items:center;justify-content:center;
+    position:absolute;top:50%;left:50%;width:22px;height:22px;z-index:1;
     transform:translate(-50%,-50%);border-radius:50%;background:rgb(var(--dot-rgb));
     box-shadow:0 0 0 4px rgba(255,255,255,.95), 0 2px 8px rgba(0,0,0,.4);
+    font-family:var(--font-main);font-weight:800;font-size:12px;color:#0b2b1d;line-height:1;
   }
   /* a slow, repeating "sonar" ring so an unopened point catches the eye against a busy photo
      instead of reading as just another spot in the image -- purely decorative, so the global
      prefers-reduced-motion rule at the top of this stylesheet already neutralizes it */
   .annotation-layer--labeled .annotation-dot::after{
-    content:"";position:absolute;top:50%;left:50%;width:14px;height:14px;pointer-events:none;
+    content:"";position:absolute;top:50%;left:50%;width:22px;height:22px;pointer-events:none;
     transform:translate(-50%,-50%);border-radius:50%;
     animation:annotationDotPulse 1.8s ease-out infinite;
   }
