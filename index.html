@@ -3553,7 +3553,7 @@
         inner = `<video class="media-el" ${attrs} src="${escapeHtml(media.src)}"></video>`;
       }
     } else {
-      inner = `<img class="media-el" src="${escapeHtml(media.src)}" alt="" />`;
+      inner = `<img class="media-el" src="${escapeHtml(media.src)}" alt="" loading="lazy" decoding="async" />`;
       if(media.kind === "gif") inner += `<span class="media-badge">GIF</span>`;
     }
     return inner + `<div class="media-overlay" data-act="openMedia">Change Media</div>`;
