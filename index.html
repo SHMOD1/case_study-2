@@ -2888,23 +2888,44 @@
       if(!layerBox.width || !layerBox.height) return;
       const els = [...layer.querySelectorAll(".annotation")];
       if(!els.length) return;
-      els.forEach(el => { el.style.transform = ""; });
+      // a labeled layer's dot marks an exact point on the photo and must never move to
+      // resolve a collision -- only its popup card is free to shift. Moving the whole
+      // .annotation (as everywhere else here still does) drags the dot along with it,
+      // and since Edit Mode force-opens every card at once (far more overlap than View
+      // Mode's usual 0-1 open cards), that made dots visibly jump to a different spot on
+      // the photo the moment Edit Mode was toggled. Everywhere else (Hero/Chapter Cover/
+      // Grid/Block text-box annotations) there's no dot -- the annotation IS the visible
+      // content -- so it keeps moving as one unit like before.
+      const labeled = layer.classList.contains("annotation-layer--labeled");
+      els.forEach(el => {
+        const textEl = el.querySelector(".annotation-text");
+        (labeled && textEl ? textEl : el).style.transform = "";
+      });
       const items = els.map(el => {
+        const textEl = el.querySelector(".annotation-text");
+        const textVisible = textEl && getComputedStyle(textEl).display !== "none";
+        if(labeled){
+          // the dot itself is never an obstacle to route around or a thing to move --
+          // only a currently-open card needs (and gets) collision handling
+          if(!textEl || !textVisible) return null;
+          const tr = textEl.getBoundingClientRect();
+          return { el, target: textEl, left: tr.left, top: tr.top, width: tr.width, height: tr.height, dx: 0, dy: 0 };
+        }
         let r = el.getBoundingClientRect();
         // a Full Background point's popup card is positioned absolutely so it never expands
         // its own dot's layout box -- getBoundingClientRect() on the dot alone would then
         // miss it entirely. Whenever the card is actually visible (Edit Mode always shows it;
         // a visitor sees it while that one point is open), fold its rect in too, or collision
         // avoidance would let two open cards sit right on top of each other.
-        const textEl = el.querySelector(".annotation-text");
-        if(textEl && getComputedStyle(textEl).display !== "none"){
+        if(textVisible){
           const tr = textEl.getBoundingClientRect();
           const left = Math.min(r.left, tr.left), top = Math.min(r.top, tr.top);
           const right = Math.max(r.right, tr.right), bottom = Math.max(r.bottom, tr.bottom);
           r = { left, top, right, bottom, width: right - left, height: bottom - top };
         }
-        return { el, left: r.left, top: r.top, width: r.width, height: r.height, dx: 0, dy: 0 };
-      });
+        return { el, target: el, left: r.left, top: r.top, width: r.width, height: r.height, dx: 0, dy: 0 };
+      }).filter(Boolean);
+      if(!items.length) return;
       const margin = 6, gap = 7;
       function clampToLayer(it){
         const left = it.left + it.dx, top = it.top + it.dy;
@@ -2944,9 +2965,16 @@
         placed.push(box());
       });
       items.forEach(it => {
-        it.el.style.transform = (it.dx || it.dy)
-          ? `translate(calc(-50% + ${it.dx.toFixed(1)}px), calc(-50% + ${it.dy.toFixed(1)}px))`
-          : "";
+        if(!(it.dx || it.dy)){ it.target.style.transform = ""; return; }
+        const dx = it.dx.toFixed(1), dy = it.dy.toFixed(1);
+        // .annotation centers itself both ways (translate(-50%,-50%)); a labeled card
+        // instead anchors vertically via `bottom` and only self-centers horizontally
+        // (translateX(-50%)) -- match whichever base convention the moving element (the
+        // whole annotation, or just its card) already uses so the offset adds cleanly
+        // on top of it instead of fighting it.
+        it.target.style.transform = it.target === it.el
+          ? `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`
+          : `translate(calc(-50% + ${dx}px), ${dy}px)`;
       });
     });
   }
@@ -3665,6 +3693,12 @@
         }
       }
     }
+    // toggling Edit Mode changes which popup cards are visible (every card at once vs the
+    // usual 0-1 in View Mode) purely via CSS, but clampAnnotations only otherwise reruns
+    // after render() or a resize -- without this, newly-revealed cards would show at their
+    // raw, un-clamped position and pile up directly on top of each other/off-screen instead
+    // of being spread apart the same way render() would have arranged them.
+    requestAnimationFrame(clampAnnotations);
   }
   $("btnEdit").addEventListener("click", () => setEditMode(!editOn));
   touchDeviceQuery.addEventListener("change", (e) => { if(e.matches && editOn) setEditMode(false); });
