@@ -3567,14 +3567,31 @@
     railChapters.querySelectorAll(".rail-item, .rail-chapter-head").forEach(el => el.setAttribute("draggable", editOn ? "true" : "false"));
   }
   const touchDeviceQuery = window.matchMedia("(pointer: coarse) and (hover: none)");
+  // toggling Edit Mode reveals/hides "+ Add ..." rows between entries that take up real
+  // space once shown -- that pushes whatever sticky slide is currently on screen down (or
+  // lets it ride back up) within the viewport, which reads as the whole photo (and every
+  // point on it) suddenly jumping. Hold the active slide's own on-screen position steady
+  // across the toggle by measuring it before and after, then correcting scroll by the
+  // difference, so nothing visibly moves except the chrome that actually changed.
   function setEditMode(on){
     if(on && touchDeviceQuery.matches) on = false; // phones/tablets are read-only, no exceptions
+    const slides = Array.from(document.querySelectorAll(".hero, .chapter-cover, .entry"));
+    const viewportMid = window.innerHeight * 0.42; // matches activeSlideIndex's own convention
+    let activeEl = slides[0];
+    slides.forEach(el => { if(el.getBoundingClientRect().top - viewportMid <= 0) activeEl = el; });
+    const beforeTop = activeEl ? activeEl.getBoundingClientRect().top : null;
+
     editOn = on;
     document.body.classList.toggle("edit-on", on);
     $("btnEdit").textContent = "Edit Mode: " + (on ? "On" : "Off");
     $("btnEdit").classList.toggle("on", on);
     syncEditableAttrs();
     syncRailDraggable();
+
+    if(activeEl && beforeTop != null){
+      const afterTop = activeEl.getBoundingClientRect().top;
+      if(afterTop !== beforeTop) window.scrollBy(0, afterTop - beforeTop);
+    }
   }
   $("btnEdit").addEventListener("click", () => setEditMode(!editOn));
   touchDeviceQuery.addEventListener("change", (e) => { if(e.matches && editOn) setEditMode(false); });
