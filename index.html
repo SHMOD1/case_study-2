@@ -762,8 +762,14 @@
     border-top-color:#7af9b4;
   }
   body.edit-on .annotation-text-body{outline:1px dashed rgba(0,0,0,.45);outline-offset:2px;cursor:text;}
+  /* absolutely positioned (not a flex sibling) so showing/hiding it in Edit Mode never
+     changes .annotation's own box width -- .annotation is centered on its x/y point via
+     transform:translate(-50%,-50%), so a handle that participated in flex layout would
+     shift that centered point sideways the moment Edit Mode revealed it, making every
+     point appear to drift when toggling Edit Mode on and off. */
   .annotation-drag-handle{
-    display:none;flex:0 0 auto;cursor:grab;color:#fff;font-size:13px;letter-spacing:-2px;
+    display:none;position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:6px;
+    cursor:grab;color:#fff;font-size:13px;letter-spacing:-2px;
     background:rgba(0,91,166,.9);border-radius:4px;padding:3px 4px;touch-action:none;user-select:none;
   }
   body.edit-on .annotation-drag-handle{display:block;}
