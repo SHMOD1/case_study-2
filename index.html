@@ -3641,8 +3641,29 @@
     syncRailDraggable();
 
     if(activeEl && beforeTop != null){
+      // the page sets html{scroll-behavior:smooth} globally for real navigation, but that
+      // makes an un-optioned scrollBy/scrollTo animate over ~300-500ms instead of applying
+      // instantly -- exactly wrong for a same-frame correction, since it would turn "hold
+      // position steady" into a brief, very visible glide (the correction itself becoming
+      // the "point moving" glitch this is meant to prevent). behavior:"instant" always
+      // overrides the CSS setting, same as the wheel-scroll easing loop already relies on
+      // (see smoothStep) -- just applied once here instead of every animation frame.
       const afterTop = activeEl.getBoundingClientRect().top;
-      if(afterTop !== beforeTop) window.scrollBy(0, afterTop - beforeTop);
+      if(afterTop !== beforeTop){
+        window.scrollTo({ top: window.scrollY + (afterTop - beforeTop), left:0, behavior:"instant" });
+      }
+      // Edit Mode off always shows exactly one slide filling the screen -- snap it flush
+      // immediately instead of merely holding whatever position it happened to be at.
+      // Otherwise, if that position wasn't already a clean slide boundary, the separate
+      // debounced "settle to nearest slide" correction (see correctScrollToNearestSlide)
+      // would fire moments later and nudge it anyway, which is exactly the kind of
+      // leftover movement this fix is meant to eliminate.
+      if(!on){
+        const settledTop = activeEl.getBoundingClientRect().top;
+        if(Math.abs(settledTop) > 0.5){
+          window.scrollTo({ top: window.scrollY + settledTop, left:0, behavior:"instant" });
+        }
+      }
     }
   }
   $("btnEdit").addEventListener("click", () => setEditMode(!editOn));
