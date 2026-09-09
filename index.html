@@ -66,6 +66,12 @@
     display:flex;align-items:center;justify-content:space-between;padding:9px 20px;
     font-size:12px;letter-spacing:.04em;gap:12px;flex-wrap:wrap;
   }
+  /* the editor's own toolbar (Edit Mode, Export/Import JSON, Reset Demo, Push to GitHub)
+     has no business showing up in the published iframe embed a visitor actually sees --
+     see the embedMode check in the script below for how ?embed=1 sets this. .chrome is
+     sticky, not fixed, so hiding it just lets the page content ride up into its place with
+     no layout gap to compensate for. */
+  body.embed-mode .chrome{ display:none; }
   .chrome-brand{display:flex;align-items:center;gap:8px;font-weight:600;text-transform:uppercase;font-size:11px;opacity:.85;}
   .chrome-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-2);}
   .chrome-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -3455,6 +3461,14 @@
   // a media-heavy dashboard entirely in the browser without losing edits mid-session.
   let state = migrateState(defaultData());
   let editOn = false;
+  // the same index.html serves two audiences: the person editing the story here directly,
+  // and every visitor who reaches it through the published iframe embed on the real
+  // website -- the latter should never see the editor's own toolbar (Edit Mode, Export/
+  // Import JSON, Reset Demo, Push to GitHub), so the iframe's src carries ?embed=1 and
+  // that hides it. Edit Mode itself already defaults to off and nothing else can turn it
+  // on once its button is gone, so a visitor can never end up looking at editing chrome.
+  const embedMode = new URLSearchParams(location.search).has("embed");
+  document.body.classList.toggle("embed-mode", embedMode);
   let modalTarget = null;
   let modalType = "image";
   let modalVideoTab = "link";
