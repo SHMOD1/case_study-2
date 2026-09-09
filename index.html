@@ -29,9 +29,6 @@
     --accent-2:#413c3f;
     --line:#e0d0ac;
     --line-strong:#c9b489;
-    --chrome-bg:#efe1c8;
-    --chrome-ink:#005ba6;
-    --chrome-border:rgba(0,91,166,.28);
     --radius:3px;
     /* brand type: "Intercom" (headings/sub-headings/quotes) has no free public release, so it's
        named first for anyone with it licensed/installed locally, then falls back to Poppins — the
@@ -45,7 +42,6 @@
     --bg:#221f22; --bg-alt:#2b272a; --paper:#262226; --ink:#f8f3ef;
     --ink-soft:#d5cec6; --ink-faint:#968f89; --accent:#35d6ef; --accent-live:#35d6ef;
     --accent-2:#ffde17; --line:#3a3438; --line-strong:#524a4e;
-    --chrome-bg:#0c2038; --chrome-ink:#f8f3ef; --chrome-border:rgba(231,226,212,.28);
   }
 
   *{box-sizing:border-box;}
@@ -59,33 +55,8 @@
     *{animation-duration:.001s !important;transition-duration:.001s !important;}
   }
 
-  /* ---------- progress + chrome ---------- */
+  /* ---------- progress ---------- */
   #progressBar{position:sticky;top:0;z-index:70;height:3px;background:var(--accent-live);width:0%;transition:width .08s linear, background-color .5s ease;}
-  .chrome{
-    position:sticky;top:3px;z-index:60;background:var(--chrome-bg);color:var(--chrome-ink);
-    display:flex;align-items:center;justify-content:space-between;padding:9px 20px;
-    font-size:12px;letter-spacing:.04em;gap:12px;flex-wrap:wrap;
-  }
-  /* the editor's own toolbar (Edit Mode, Export/Import JSON, Reset Demo, Push to GitHub)
-     has no business showing up in the published iframe embed a visitor actually sees --
-     see the embedMode check in the script below for how ?embed=1 sets this. .chrome is
-     sticky, not fixed, so hiding it just lets the page content ride up into its place with
-     no layout gap to compensate for. */
-  body.embed-mode .chrome{ display:none; }
-  .chrome-brand{display:flex;align-items:center;gap:8px;font-weight:600;text-transform:uppercase;font-size:11px;opacity:.85;}
-  .chrome-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-2);}
-  .chrome-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .chrome button, .chrome label.file-btn{
-    background:transparent;border:1px solid var(--chrome-border);color:var(--chrome-ink);
-    padding:6px 12px;border-radius:20px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
-    transition:background .15s, border-color .15s;
-  }
-  .chrome button:hover, .chrome label.file-btn:hover{background:rgba(65,60,63,.08);border-color:var(--accent);}
-  [data-theme="dark"] .chrome button:hover, [data-theme="dark"] .chrome label.file-btn:hover{background:rgba(231,226,212,.1);border-color:rgba(231,226,212,.5);}
-  .chrome button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-2);font-weight:700;}
-  .chrome button.primary.on{background:#3f7d5c;border-color:#3f7d5c;color:#eafff1;}
-  .chrome-hint{font-size:10.5px;color:var(--ink-faint);opacity:.7;display:none;}
-  body.edit-on .chrome-hint{display:inline;}
 
   /* ---------- editable affordances ---------- */
   [contenteditable="true"]{outline:none;}
@@ -1120,18 +1091,6 @@
 
   <div id="progressBar"></div>
 
-  <div class="chrome">
-    <div class="chrome-brand"><span class="chrome-dot"></span> Editable Storymap Dashboard</div>
-    <div class="chrome-actions">
-      <span class="chrome-hint">Click text or media below to edit it</span>
-      <button id="btnEdit" class="primary">Edit Mode: Off</button>
-      <button id="btnExport">Export JSON</button>
-      <label class="file-btn">Import JSON<input type="file" id="fileImport" accept="application/json" /></label>
-      <button id="btnReset">Reset Demo</button>
-      <button id="btnGithubPush">Push to GitHub</button>
-    </div>
-  </div>
-
   <div class="position-popup" id="positionPopup">
     <span class="position-popup-drop">💧</span>
     <span class="position-popup-text">
@@ -1239,43 +1198,6 @@
       <div class="modal-actions">
         <button id="modalCancel" type="button">Cancel</button>
         <button id="modalSave" class="primary" type="button">Save Media</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="githubModalBackdrop">
-    <div class="modal">
-      <h3>Push to GitHub</h3>
-      <p class="hint">Uploads every image/video in your current content to its own file (never one giant blob),
-        then commits your content as this file's new default.</p>
-      <input type="text" id="ghOwner" placeholder="Repo owner (e.g. shmod1)" />
-      <input type="text" id="ghRepo" placeholder="Repo name (e.g. case_study-2)" />
-      <input type="text" id="ghBranch" placeholder="Branch (e.g. main)" />
-      <input type="text" id="ghToken" placeholder="GitHub Personal Access Token" autocomplete="off" />
-      <p class="hint">Needs a GitHub <a href="https://github.com/settings/personal-access-tokens/new"
-        target="_blank" rel="noopener">Personal Access Token</a> with write access to this one repo — it's kept
-        only in this browser tab's session storage, never sent anywhere except directly to api.github.com.</p>
-
-      <label class="hold-label" for="mediaHostChoice">Where should images/video be uploaded?</label>
-      <select id="mediaHostChoice" style="width:100%;padding:9px 10px;border:1px solid var(--line-strong);
-        border-radius:4px;background:var(--bg);color:var(--ink);font-size:13px;margin-bottom:12px;">
-        <option value="github">This repo's assets/ folder (default)</option>
-        <option value="cloudflare">Cloudflare R2 (better for large files)</option>
-      </select>
-
-      <div id="cloudflareFields" class="field-hidden">
-        <input type="text" id="cfWorkerUrl" placeholder="Worker URL (e.g. https://your-worker.you.workers.dev)" />
-        <input type="text" id="cfSecret" placeholder="Upload secret" autocomplete="off" />
-        <p class="hint">Media is PUT directly to your Cloudflare Worker, which stores it in your R2 bucket and
-          hands back a public URL — better suited to large files than GitHub's API. Your content (text/structure)
-          still commits to GitHub as usual; only the media upload path changes. Requires a one-time Worker/R2
-          setup — ask for the setup steps if you haven't done this yet.</p>
-      </div>
-
-      <div id="ghPushStatus" class="hint" style="min-height:36px;white-space:pre-line;"></div>
-      <div class="modal-actions">
-        <button id="ghModalCancel" type="button">Close</button>
-        <button id="ghPushBtn" class="primary" type="button">Push</button>
       </div>
     </div>
   </div>
@@ -3460,15 +3382,10 @@
   // blows through fast; IndexedDB scales into the hundreds of MB, comfortably enough to edit
   // a media-heavy dashboard entirely in the browser without losing edits mid-session.
   let state = migrateState(defaultData());
+  // this file is now a permanently published, read-only story -- Edit Mode, Export/Import
+  // JSON, Reset Demo, and Push to GitHub (and the toolbar that triggered them) have all
+  // been removed, so editOn stays false forever with nothing left able to change it.
   let editOn = false;
-  // the same index.html serves two audiences: the person editing the story here directly,
-  // and every visitor who reaches it through the published iframe embed on the real
-  // website -- the latter should never see the editor's own toolbar (Edit Mode, Export/
-  // Import JSON, Reset Demo, Push to GitHub), so the iframe's src carries ?embed=1 and
-  // that hides it. Edit Mode itself already defaults to off and nothing else can turn it
-  // on once its button is gone, so a visitor can never end up looking at editing chrome.
-  const embedMode = new URLSearchParams(location.search).has("embed");
-  document.body.classList.toggle("embed-mode", embedMode);
   let modalTarget = null;
   let modalType = "image";
   let modalVideoTab = "link";
@@ -4392,61 +4309,6 @@
     railChapters.querySelectorAll(".rail-item, .rail-chapter-head").forEach(el => el.setAttribute("draggable", editOn ? "true" : "false"));
   }
   const touchDeviceQuery = window.matchMedia("(pointer: coarse) and (hover: none)");
-  // toggling Edit Mode reveals/hides "+ Add ..." rows between entries that take up real
-  // space once shown -- that pushes whatever sticky slide is currently on screen down (or
-  // lets it ride back up) within the viewport, which reads as the whole photo (and every
-  // point on it) suddenly jumping. Hold the active slide's own on-screen position steady
-  // across the toggle by measuring it before and after, then correcting scroll by the
-  // difference, so nothing visibly moves except the chrome that actually changed.
-  function setEditMode(on){
-    if(on && touchDeviceQuery.matches) on = false; // phones/tablets are read-only, no exceptions
-    const slides = Array.from(document.querySelectorAll(".hero, .chapter-cover, .entry"));
-    const viewportMid = window.innerHeight * 0.42; // matches activeSlideIndex's own convention
-    let activeEl = slides[0];
-    slides.forEach(el => { if(el.getBoundingClientRect().top - viewportMid <= 0) activeEl = el; });
-    const beforeTop = activeEl ? activeEl.getBoundingClientRect().top : null;
-
-    editOn = on;
-    document.body.classList.toggle("edit-on", on);
-    $("btnEdit").textContent = "Edit Mode: " + (on ? "On" : "Off");
-    $("btnEdit").classList.toggle("on", on);
-    syncEditableAttrs();
-    syncRailDraggable();
-
-    if(activeEl && beforeTop != null){
-      // the page sets html{scroll-behavior:smooth} globally for real navigation, but that
-      // makes an un-optioned scrollBy/scrollTo animate over ~300-500ms instead of applying
-      // instantly -- exactly wrong for a same-frame correction, since it would turn "hold
-      // position steady" into a brief, very visible glide (the correction itself becoming
-      // the "point moving" glitch this is meant to prevent). behavior:"instant" always
-      // overrides the CSS setting, same as the wheel-scroll easing loop already relies on
-      // (see smoothStep) -- just applied once here instead of every animation frame.
-      const afterTop = activeEl.getBoundingClientRect().top;
-      if(afterTop !== beforeTop){
-        window.scrollTo({ top: window.scrollY + (afterTop - beforeTop), left:0, behavior:"instant" });
-      }
-      // Edit Mode off always shows exactly one slide filling the screen -- snap it flush
-      // immediately instead of merely holding whatever position it happened to be at.
-      // Otherwise, if that position wasn't already a clean slide boundary, the separate
-      // debounced "settle to nearest slide" correction (see correctScrollToNearestSlide)
-      // would fire moments later and nudge it anyway, which is exactly the kind of
-      // leftover movement this fix is meant to eliminate.
-      if(!on){
-        const settledTop = activeEl.getBoundingClientRect().top;
-        if(Math.abs(settledTop) > 0.5){
-          window.scrollTo({ top: window.scrollY + settledTop, left:0, behavior:"instant" });
-        }
-      }
-    }
-    // toggling Edit Mode changes which popup cards are visible (every card at once vs the
-    // usual 0-1 in View Mode) purely via CSS, but clampAnnotations only otherwise reruns
-    // after render() or a resize -- without this, newly-revealed cards would show at their
-    // raw, un-clamped position and pile up directly on top of each other/off-screen instead
-    // of being spread apart the same way render() would have arranged them.
-    requestAnimationFrame(clampAnnotations);
-  }
-  $("btnEdit").addEventListener("click", () => setEditMode(!editOn));
-  touchDeviceQuery.addEventListener("change", (e) => { if(e.matches && editOn) setEditMode(false); });
 
   // pasting into any editable field (a label, a caption, a title...) always inserts plain text,
   // never whatever rich formatting the clipboard carried -- otherwise a pasted citation/link's
@@ -5670,348 +5532,10 @@
     gateSlideEl = null;
   }
 
-  /* ---------------- export / import / reset ---------------- */
-  $("btnExport").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "storymap-dashboard-content.json";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  });
-  $("fileImport").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try{
-        const data = JSON.parse(reader.result);
-        if(!data.chapters || !Array.isArray(data.chapters)) throw new Error("Invalid file");
-        state = migrateState(data); saveState(); render();
-      }catch(err){ alert("That file doesn't look like a valid dashboard export."); }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  });
-  $("btnReset").addEventListener("click", () => {
-    if(!confirm("Reset to the demo content? Your edits will be lost unless exported.")) return;
-    state = defaultData(); saveState(); render();
-  });
   $("heroAddLogo").addEventListener("click", addHeroLogo);
   $("heroScrollBtn").addEventListener("click", () => {
     if(!gateReady) return; // hero's background media is still playing/holding
     document.querySelector(".chapter")?.scrollIntoView({ behavior:"smooth", block:"start" });
-  });
-
-  /* ---------------- push to GitHub ----------------
-     Uploads every embedded data: URI in the current content to assets/ in the repo as its
-     own file, rewrites the (cloned) content to point at those relative paths instead, then
-     commits that as the new default content baked into index.html — splicing it in between
-     the DEFAULT_DATA_START/END markers around defaultData()'s return statement above. This
-     never moves one giant blob anywhere: each asset is its own small upload, and the content
-     commit itself stays lightweight once media stops being embedded as base64. The GitHub
-     token/owner/repo/branch fields are remembered only in this tab's sessionStorage — gone
-     once the tab closes, never written to disk or sent anywhere but api.github.com. */
-  const GITHUB_API = "https://api.github.com";
-  const GH_MIME_EXT = {
-    "image/png":"png", "image/jpeg":"jpg", "image/gif":"gif", "image/webp":"webp",
-    "video/mp4":"mp4", "video/webm":"webm", "video/quicktime":"mov"
-  };
-  function githubHeaders(token){
-    return { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github+json" };
-  }
-  // extracts the most useful error text available from a failed response — GitHub usually
-  // sends JSON with a .message, but proxied 5xx errors (e.g. a request body that's too
-  // large) can come back as an empty or non-JSON body, and res.statusText is often empty
-  // too since Chrome doesn't surface a reason phrase for HTTP/2 responses
-  async function githubErrorText(res){
-    const raw = await res.text().catch(() => "");
-    try{
-      const parsed = JSON.parse(raw);
-      if(parsed && parsed.message) return parsed.message;
-    }catch(e){ /* not JSON */ }
-    return raw || res.statusText || "no further detail from GitHub";
-  }
-  async function githubGetFile(owner, repo, path, branch, token){
-    const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
-    const res = await fetch(url, { headers: githubHeaders(token) });
-    if(res.status === 404) return null;
-    if(!res.ok) throw new Error(`Couldn't read ${path} (${res.status}): ${await githubErrorText(res)}`);
-    return res.json();
-  }
-  async function githubPutFile(owner, repo, path, branch, token, base64Content, message, sha){
-    const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;
-    const body = { message, content: base64Content, branch };
-    if(sha) body.sha = sha;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { ...githubHeaders(token), "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    if(!res.ok){
-      const sizeNote = base64Content.length > 60_000_000
-        ? " — this file is large; GitHub's Contents API tops out well under its documented 100MB limit in practice, so this is likely a size problem, not a token/permission one."
-        : "";
-      throw new Error(`Couldn't write ${path} (${res.status}): ${await githubErrorText(res)}${sizeNote}`);
-    }
-    return res.json();
-  }
-  // matches every {kind, src} media object whose src is still an embedded base64 data: URI,
-  // wherever it lives (hero, covers, blocks, sequence steps, callouts, logos, the mascot...).
-  // Deliberately excludes the ";utf8,"-encoded placeholder SVGs (from placeholder()/
-  // animatedPlaceholder() above) — those are tiny, procedurally generated decoration, not
-  // real uploaded content worth its own file in the repo.
-  const DATA_URI_BASE64_RE = /^data:[^;]+;base64,/;
-  function dataUriParts(dataUri){
-    const m = dataUri.match(/^data:([^;]+);base64,([\s\S]*)$/);
-    if(!m) return null;
-    return { mime: m[1], base64: m[2] };
-  }
-  function base64ToBytes(base64){
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
-  }
-  const EXT_MIME = Object.fromEntries(Object.entries(GH_MIME_EXT).map(([mime, ext]) => [ext, mime]));
-  // matches this file's own "assets/push-<hash>.<ext>" naming scheme specifically, so a
-  // Cloudflare migration pass can recognize files already pushed to GitHub and pull them
-  // back for re-upload, without touching any other assets/ path a real user might have
-  const GITHUB_ASSET_PATH_RE = /^assets\/(push-([a-f0-9]{10})\.([a-z0-9]+))$/;
-  async function githubGetRawBytes(owner, repo, path, branch, token){
-    const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
-    const res = await fetch(url, { headers: { ...githubHeaders(token), "Accept": "application/vnd.github.raw+json" } });
-    if(!res.ok) throw new Error(`Couldn't fetch ${path} from GitHub (${res.status}): ${await githubErrorText(res)}`);
-    return res.arrayBuffer();
-  }
-  // keeps this case study's media in its own R2 prefix, separate from other dashboards
-  // sharing the same bucket/worker
-  const CLOUDFLARE_FOLDER_PREFIX = "case_study-2/";
-  async function uploadToCloudflare(workerUrl, secret, path, body, mime){
-    const url = `${workerUrl.replace(/\/$/, "")}/${path.split("/").map(encodeURIComponent).join("/")}`;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { "Authorization": `Bearer ${secret}`, "Content-Type": mime || "application/octet-stream" },
-      body
-    });
-    if(!res.ok){
-      const text = await res.text().catch(() => "");
-      throw new Error(`Couldn't upload ${path} to Cloudflare (${res.status}): ${text || res.statusText || "no further detail"}`);
-    }
-    const data = await res.json();
-    return data.url;
-  }
-  // finds every media object still worth touching for the chosen host: anything still
-  // embedded as a data: URI (never uploaded anywhere), plus — only when pushing to
-  // Cloudflare — anything already migrated to this repo's assets/ folder in an earlier
-  // GitHub push, so a switch to Cloudflare ends with everything consolidated in one place
-  // instead of split across two hosts
-  function collectPendingMedia(node, targetHost, found){
-    found = found || [];
-    if(!node || typeof node !== "object") return found;
-    if(Array.isArray(node)){ node.forEach(child => collectPendingMedia(child, targetHost, found)); return found; }
-    if(typeof node.src === "string" && (node.kind === "image" || node.kind === "video" || node.kind === "gif")){
-      if(DATA_URI_BASE64_RE.test(node.src)){
-        found.push({ obj: node, type: "dataUri" });
-      } else if(targetHost === "cloudflare" && GITHUB_ASSET_PATH_RE.test(node.src)){
-        found.push({ obj: node, type: "githubAsset" });
-      }
-    }
-    Object.values(node).forEach(v => collectPendingMedia(v, targetHost, found));
-    return found;
-  }
-  // Hashes the base64 TEXT directly rather than decoding it to raw bytes first — base64 is
-  // already ASCII, so TextEncoder can turn it straight into bytes for SubtleCrypto with no
-  // atob() decode step at all. That decode (atob() to a binary string, then a manual
-  // byte-by-byte copy into a Uint8Array) was extra full-size copies of every file, on top of
-  // everything else already in memory; skipping it removes that entirely. Deterministic
-  // either way — same file content always produces the same hash — so this is safe to change
-  // without orphaning or duplicating anything already pushed under the old scheme.
-  async function shortHashOfBase64(base64){
-    const bytes = new TextEncoder().encode(base64);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2,"0")).join("").slice(0, 10);
-  }
-  // UTF-8 safe base64 encode/decode — plain atob/btoa only handle Latin1, and this content
-  // is full of curly quotes, em dashes, etc.
-  // TextEncoder/TextDecoder (not the classic escape/unescape trick) — native, faster, and
-  // doesn't create a bloated intermediate %XX-escaped string for every non-ASCII character
-  function utf8ToBase64(str){
-    const bytes = new TextEncoder().encode(str);
-    let binary = "";
-    const chunkSize = 0x8000; // chunked to avoid call-stack limits on String.fromCharCode(...bytes) for large inputs
-    for(let i=0;i<bytes.length;i+=chunkSize){
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
-  }
-  function base64ToUtf8(b64){
-    const binary = atob(b64.replace(/\n/g, ""));
-    const bytes = new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
-  function setPushStatus(msg){ $("ghPushStatus").textContent = msg; }
-  function withTimeout(promise, ms, label){
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms/1000)}s`)), ms))
-    ]);
-  }
-  const GH_SESSION_FIELDS = ["ghOwner", "ghRepo", "ghBranch", "ghToken", "mediaHostChoice", "cfWorkerUrl", "cfSecret"];
-  function loadGithubFieldsFromSession(){
-    GH_SESSION_FIELDS.forEach(id => { const v = sessionStorage.getItem("gh_" + id); if(v) $(id).value = v; });
-    updateMediaHostFieldVisibility();
-  }
-  function saveGithubFieldsToSession(){
-    GH_SESSION_FIELDS.forEach(id => sessionStorage.setItem("gh_" + id, $(id).value.trim()));
-  }
-  function updateMediaHostFieldVisibility(){
-    $("cloudflareFields").classList.toggle("field-hidden", $("mediaHostChoice").value !== "cloudflare");
-  }
-  $("mediaHostChoice").addEventListener("change", updateMediaHostFieldVisibility);
-
-  $("btnGithubPush").addEventListener("click", () => {
-    loadGithubFieldsFromSession();
-    setPushStatus("");
-    $("githubModalBackdrop").classList.add("open");
-  });
-  $("ghModalCancel").addEventListener("click", () => $("githubModalBackdrop").classList.remove("open"));
-  $("githubModalBackdrop").addEventListener("click", (e) => {
-    if(e.target === $("githubModalBackdrop")) $("githubModalBackdrop").classList.remove("open");
-  });
-
-  $("ghPushBtn").addEventListener("click", async () => {
-    const owner = $("ghOwner").value.trim();
-    const repo = $("ghRepo").value.trim();
-    const branch = $("ghBranch").value.trim();
-    const token = $("ghToken").value.trim();
-    const mediaHost = $("mediaHostChoice").value;
-    const cfWorkerUrl = $("cfWorkerUrl").value.trim();
-    const cfSecret = $("cfSecret").value.trim();
-    if(!owner || !repo || !branch || !token){
-      setPushStatus("Fill in the repo owner, repo name, branch, and token first.");
-      return;
-    }
-    if(mediaHost === "cloudflare" && (!cfWorkerUrl || !cfSecret)){
-      setPushStatus("Fill in the Cloudflare Worker URL and upload secret first.");
-      return;
-    }
-    saveGithubFieldsToSession();
-    $("ghPushBtn").disabled = true;
-    // Mutate the LIVE state's media objects in place, PERMANENTLY, the moment each upload
-    // succeeds — no cloning, and no keeping the original around for a possible rollback
-    // either. Holding on to every already-uploaded file's original data just in case of a
-    // later failure sounds safer, but at hundreds of MB of embedded media it means never
-    // actually freeing that memory during the push, which is exactly what was crashing the
-    // tab even after every file had already uploaded fine. Once a file's swapped, its old
-    // string becomes garbage-collectable for real. A push that fails partway through just
-    // leaves whatever succeeded already swapped over and everything else still embedded —
-    // clicking Push again picks up exactly where it left off, since already-migrated items
-    // no longer look like unpushed media to collectPendingMedia().
-    let successCount = 0;
-    const failures = [];
-    try{
-      setPushStatus("Preparing content...");
-      const pending = collectPendingMedia(state, mediaHost);
-      for(let i=0;i<pending.length;i++){
-        const { obj: m, type } = pending[i];
-        setPushStatus(`Uploading media ${i+1} of ${pending.length}...`);
-        // one oversized or flaky file shouldn't block every other upload — record it and
-        // move on, leaving that item as-is; everything else still goes through. A hard
-        // 90s-per-file timeout catches a request that's genuinely hung (not just slow) —
-        // without it, one stuck file blocks the entire push indefinitely with no way to
-        // know it'll never finish on its own.
-        try{
-          await withTimeout((async () => {
-            if(type === "dataUri"){
-              const parts = dataUriParts(m.src);
-              if(!parts) return;
-              const ext = GH_MIME_EXT[parts.mime] || (m.kind === "video" ? "mp4" : "png");
-              const hash = await shortHashOfBase64(parts.base64);
-              const filename = `push-${hash}.${ext}`;
-              if(mediaHost === "cloudflare"){
-                m.src = await uploadToCloudflare(cfWorkerUrl, cfSecret, CLOUDFLARE_FOLDER_PREFIX + filename, base64ToBytes(parts.base64), parts.mime);
-              } else {
-                const assetPath = `assets/${filename}`;
-                const existing = await githubGetFile(owner, repo, assetPath, branch, token);
-                await githubPutFile(owner, repo, assetPath, branch, token, parts.base64,
-                  `Add media asset ${hash}`, existing && existing.sha);
-                m.src = assetPath;
-              }
-            } else if(type === "githubAsset"){
-              // already pushed to this repo's assets/ in an earlier run — pull it back and
-              // re-upload to Cloudflare so everything ends up in one place, not split in two
-              const match = m.src.match(GITHUB_ASSET_PATH_RE);
-              const filename = match[1], ext = match[3];
-              const bytes = await githubGetRawBytes(owner, repo, m.src, branch, token);
-              m.src = await uploadToCloudflare(cfWorkerUrl, cfSecret, CLOUDFLARE_FOLDER_PREFIX + filename, bytes, EXT_MIME[ext]);
-            }
-          })(), 90000, `media ${i+1}`);
-          successCount++;
-          // persist to IndexedDB after EVERY file, not just at the end — a browser "Out of
-          // Memory" tab crash kills the whole process outright rather than throwing a
-          // catchable error, so the finally block below never runs either; without this,
-          // every file that successfully uploads still gets lost locally (though never
-          // re-uploaded, since it's already safely wherever it was just sent) the moment
-          // the tab dies, forcing every retry to start over from the full original size again
-          await idbSaveState(state);
-        }catch(mediaErr){
-          if(/timed out/.test(mediaErr.message)){
-            // a hang (not a normal fast-failing error) means retrying as-is probably just
-            // hangs again — clear it instead of leaving a giant embedded blob that would
-            // keep blocking the final content commit too; the slot is left empty so it's
-            // obviously missing, not silently broken, and can be re-added with a direct
-            // link (e.g. YouTube/Vimeo for video) via Change Media afterward
-            m.src = "";
-            failures.push(`${mediaErr.message} — cleared locally so it stops blocking the rest of the push; re-add it manually afterward`);
-            await idbSaveState(state);
-          } else {
-            failures.push(mediaErr.message);
-          }
-        }
-      }
-
-      setPushStatus("Fetching current index.html...");
-      const htmlFile = await githubGetFile(owner, repo, "index.html", branch, token);
-      if(!htmlFile) throw new Error("Couldn't find index.html on that branch — check owner/repo/branch.");
-      const currentHtml = base64ToUtf8(htmlFile.content);
-
-      const startMarker = "/* DEFAULT_DATA_START */", endMarker = "/* DEFAULT_DATA_END */";
-      const startIdx = currentHtml.indexOf(startMarker);
-      const endIdx = currentHtml.indexOf(endMarker);
-      if(startIdx === -1 || endIdx === -1 || endIdx < startIdx){
-        throw new Error("Couldn't find the content markers in that index.html — is it an older version?");
-      }
-      // by this point every media .src still embedded as data: has already been swept out
-      // to a short relative path above, so this is cheap regardless of how large the
-      // original content was
-      const jsonStr = JSON.stringify(state, null, 2);
-      const newHtml = currentHtml.slice(0, startIdx + startMarker.length) +
-        " " + jsonStr + " " + currentHtml.slice(endIdx);
-
-      setPushStatus("Committing index.html...");
-      await githubPutFile(owner, repo, "index.html", branch, token, utf8ToBase64(newHtml),
-        "Update dashboard content via in-app push", htmlFile.sha);
-
-      const doneMsg = mediaHost === "cloudflare"
-        ? `Done — pushed ${successCount} media file(s) to Cloudflare and your content to ${owner}/${repo}@${branch}. ` +
-          `Your local copy now points at those same public URLs too (so it stays light going forward) — since ` +
-          `they're full URLs, images should keep working right here, not just once this is hosted elsewhere.`
-        : `Done — pushed ${successCount} media file(s) and your content to ${owner}/${repo}@${branch}. ` +
-          `Your local copy now points at those same short paths too (so it stays light going forward) — ` +
-          `images may look broken right here unless this page is being viewed from somewhere that also serves ` +
-          `assets/ (the repo itself, or a hosted copy), but everything is safely on GitHub now.`;
-      setPushStatus(failures.length
-        ? `${doneMsg}\n${failures.length} file(s) had a problem (see below — a timeout means it was cleared locally so it stopped blocking the rest; anything else means it's still embedded and safe to retry with Push again):\n${failures.join("\n")}`
-        : doneMsg);
-    }catch(err){
-      setPushStatus(`Error: ${err.message}\n${successCount} media file(s) already succeeded and are saved — click Push again to pick up where this left off.` +
-        (failures.length ? `\n${failures.length} media file(s) also had a problem this run (see below — a timeout means it was cleared locally; anything else means it's still embedded):\n${failures.join("\n")}` : ""));
-    }finally{
-      saveState(); // persist whatever migration progress happened, partial or complete
-      $("ghPushBtn").disabled = false;
-    }
   });
 
   /* ---------------- init ---------------- */
